@@ -4,8 +4,8 @@ cd $(cd -P -- "$(dirname -- "$0")" && pwd -P)
 # Set the path of the generated Dockerfile
 export DOCKERFILE=".build/Dockerfile"
 export STACKS_DIR=".build/docker-stacks"
-# please test the build of the commit in https://github.com/jupyter/docker-stacks/commits/master in advance
-export HEAD_COMMIT="6d61708f1747d4fb15e3c0166805ebb5fba41ea1"
+# please test the build of the commit in https://github.com/ridewind/docker-stacks/commits/master in advance
+export HEAD_COMMIT="latest"
 
 while [[ "$#" -gt 0 ]]; do case $1 in
   -p|--pw|--password) PASSWORD="$2" && USE_PASSWORD=1; shift;;
@@ -23,8 +23,8 @@ if [[ "$HELP" == 1 ]]; then
     echo "Usage: $0 [parameters]"
     echo "    -h|--help: Show this help."
     echo "    -p|--pw|--password: Set the password (and update in src/jupyter_notebook_config.json)"
-    echo "    -c|--commit: Set the head commit of the jupyter/docker-stacks submodule (https://github.com/jupyter/docker-stacks/commits/master). default: $HEAD_COMMIT."
-    echo "    --no-datascience-notebook|--python-only: Use not the datascience-notebook from jupyter/docker-stacks, don't install Julia and R."
+    echo "    -c|--commit: Set the head commit of the ridewind/docker-stacks submodule (https://github.com/ridewind/docker-stacks/commits/master). default: $HEAD_COMMIT."
+    echo "    --no-datascience-notebook|--python-only: Use not the datascience-notebook from ridewind/docker-stacks, don't install Julia and R."
     echo "    --no-useful-packages: Don't install the useful packages, specified in src/Dockerfile.usefulpackages"
     echo "    --slim: no useful packages and no datascience notebook."
     exit 21
@@ -32,7 +32,7 @@ fi
 
 # Clone if docker-stacks doesn't exist, and set to the given commit or the default commit
 ls $STACKS_DIR/README.md  > /dev/null 2>&1  || (echo "Docker-stacks was not found, cloning repository" \
- && git clone https://github.com/jupyter/docker-stacks.git $STACKS_DIR)
+ && git clone https://github.com/ridewind/docker-stacks.git $STACKS_DIR)
 echo "Set docker-stacks to commit '$HEAD_COMMIT'."
 if [[ "$HEAD_COMMIT" == "latest" ]]; then
   echo "WARNING, the latest commit of docker-stacks is used. This may result in version conflicts"
@@ -43,7 +43,7 @@ else
   echo "$HEAD"
   if [[ "$GOT_HEAD" == "false" ]]; then
     echo "Error: The given sha-commit is invalid."
-    echo "Usage: $0 -c [sha-commit] # set the head commit of the docker-stacks submodule (https://github.com/jupyter/docker-stacks/commits/master)."
+    echo "Usage: $0 -c [sha-commit] # set the head commit of the docker-stacks submodule (https://github.com/ridewind/docker-stacks/commits/master)."
     echo "Exiting"
     exit 2
   else
