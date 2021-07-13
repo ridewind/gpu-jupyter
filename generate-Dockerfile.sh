@@ -22,7 +22,6 @@ if [[ "$HELP" == 1 ]]; then
     echo "Help for ./generate-Dockerfile.sh:"
     echo "Usage: $0 [parameters]"
     echo "    -h|--help: Show this help."
-    echo "    -p|--pw|--password: Set the password (and update in src/jupyter_notebook_config.json)"
     echo "    -c|--commit: Set the head commit of the ridewind/docker-stacks submodule (https://github.com/ridewind/docker-stacks/commits/master). default: $HEAD_COMMIT."
     echo "    --no-datascience-notebook|--python-only: Use not the datascience-notebook from ridewind/docker-stacks, don't install Julia and R."
     echo "    --no-useful-packages: Don't install the useful packages, specified in src/Dockerfile.usefulpackages"
@@ -69,11 +68,13 @@ echo "
 cat $STACKS_DIR/base-notebook/Dockerfile | grep -v BASE_CONTAINER >> $DOCKERFILE
 
 # copy files that are used during the build:
-cp $STACKS_DIR/base-notebook/jupyter_notebook_config.py .build/
+cp $STACKS_DIR/base-notebook/Shanghai .build/
 cp $STACKS_DIR/base-notebook/fix-permissions .build/
+cp $STACKS_DIR/base-notebook/jupyterlab_language_pack_zh_CN-0.0.1.dev0-py2.py3-none-any.whl .build/
 cp $STACKS_DIR/base-notebook/start.sh .build/
 cp $STACKS_DIR/base-notebook/start-notebook.sh .build/
 cp $STACKS_DIR/base-notebook/start-singleuser.sh .build/
+cp $STACKS_DIR/base-notebook/jupyter_notebook_config.py .build/
 chmod 755 .build/*
 
 echo "
@@ -126,25 +127,6 @@ fi
 # Copy the demo notebooks and change permissions
 cp -r extra/Getting_Started data
 chmod -R 755 data/
-
-# set password
-if [[ "$USE_PASSWORD" == 1 ]]; then
-  echo "Set password to given input"
-  SALT="3b4b6378355"
-  HASHED=$(echo -n ${PASSWORD}${SALT} | sha1sum | awk '{print $1}')
-  unset PASSWORD  # delete variable PASSWORD
-  # build jupyter_notebook_config.json
-  echo "{
-  \"NotebookApp\": {
-    \"password\": \"sha1:$SALT:$HASHED\"
-  }
-}" > src/jupyter_notebook_config.json
-fi
-
-cp src/jupyter_notebook_config.json .build/
-echo >> $DOCKERFILE
-echo "# Copy jupyter_notebook_config.json" >> $DOCKERFILE
-echo "COPY jupyter_notebook_config.json /etc/jupyter/"  >> $DOCKERFILE
 
 # Set environment variables
 export JUPYTER_UID=$(id -u)

@@ -1,5 +1,3 @@
-LABEL authors="Christoph Schranz <christoph.schranz@salzburgresearch.at>, Mathematical Michael <consistentbayes@gmail.com>"
-
 USER root
 
 RUN pip install --no-cache-dir ipyleaflet "plotly>=4.14.3" "ipywidgets>=7.5"
@@ -10,7 +8,7 @@ RUN set -ex \
     graphviz==0.11 \
 ' \
  && apt-get update \
- && apt-get -y install htop apt-utils iputils-ping graphviz libgraphviz-dev openssh-client \
+ && apt-get -y install htop apt-utils iputils-ping graphviz libgraphviz-dev openssh-client rsync \
  && pip install --no-cache-dir $buildDeps
 
 # Install various extensions

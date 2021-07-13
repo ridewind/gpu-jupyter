@@ -1,5 +1,3 @@
-LABEL maintainer="Christoph Schranz <christoph.schranz@salzburgresearch.at>"
-
 # Install Tensorflow, check compatibility here:
 # https://www.tensorflow.org/install/source#gpu
 # installation via conda leads to errors in version 4.8.2
