@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-cd $(cd -P -- "$(dirname -- "$0")" && pwd -P)
+WORKDIR=$(cd $(dirname $0); pwd)
+cd $WORKDIR
 
 # Set the path of the generated Dockerfile
 export DOCKERFILE=".build/Dockerfile"
@@ -35,10 +36,10 @@ ls $STACKS_DIR/README.md  > /dev/null 2>&1  || (echo "Docker-stacks was not foun
 echo "Set docker-stacks to commit '$HEAD_COMMIT'."
 if [[ "$HEAD_COMMIT" == "latest" ]]; then
   echo "WARNING, the latest commit of docker-stacks is used. This may result in version conflicts"
-  cd $STACKS_DIR && git pull && cd -
+  cd $STACKS_DIR && git pull https://github.com/ridewind/docker-stacks master && cd -
 else
   export GOT_HEAD="false"
-  cd $STACKS_DIR && git pull && git reset --hard "$HEAD_COMMIT" > /dev/null 2>&1  && cd - && export GOT_HEAD="true"
+  cd $STACKS_DIR && git pull https://github.com/ridewind/docker-stacks master && git reset --hard "$HEAD_COMMIT" > /dev/null 2>&1  && cd - && export GOT_HEAD="true"
   echo "$HEAD"
   if [[ "$GOT_HEAD" == "false" ]]; then
     echo "Error: The given sha-commit is invalid."

@@ -15,22 +15,8 @@ RUN conda install --quiet --yes \
 # Check compatibility here:
 # https://pytorch.org/get-started/locally/
 # Installation via conda leads to errors installing cudatoolkit=11.1
-RUN pip install --no-cache-dir torch torchvision torchaudio torchviz
-
-USER root
-
-# Install nvtop to monitor the gpu tasks
-RUN apt-get update && \
-    apt-get install -y cmake libncurses5-dev libncursesw5-dev git && \
-    rm -rf /var/lib/apt/lists/*
-
-RUN git clone https://github.com/Syllo/nvtop.git /run/nvtop && \
-    mkdir -p /run/nvtop/build && cd /run/nvtop/build && \
-    (cmake .. -DNVML_RETRIEVE_HEADER_ONLINE=True 2> /dev/null || echo "cmake was not successful") && \
-    (make 2> /dev/null || echo "make was not successful") && \
-    (make install 2> /dev/null || echo "make install was not successful") && \
-    cd /tmp && rm -rf /tmp/nvtop
-
-RUN fix-permissions /home/$NB_USER
-
-USER $NB_UID
+#RUN pip install --no-cache-dir torch torchvision torchaudio torchviz
+# fix cmd 20210714 https://pytorch.org/get-started/locally/
+RUN pip3 install torch==1.8.1+cu111 torchvision==0.9.1+cu111 torchaudio==0.8.1 -f https://download.pytorch.org/whl/lts/1.8/torch_lts.html && \
+    pip install --no-cache-dir torchviz && \
+    fix-permissions /home/$NB_USER

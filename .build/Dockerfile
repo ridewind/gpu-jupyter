@@ -8,7 +8,7 @@
 # Use NVIDIA CUDA as base image and run the same installation as in the other packages.
 # The version of cudatoolkit must match those of the base image, see Dockerfile.pytorch
 FROM nvidia/cuda:11.0.3-cudnn8-runtime-ubuntu20.04
-LABEL authors="Christoph Schranz <christoph.schranz@salzburgresearch.at>, Mathematical Michael <consistentbayes@gmail.com>"
+LABEL maintainer="Jupyter Project For zretc.net <yangfei007@chinasofti.com>"
 # This is a concatenated Dockerfile, the maintainers of subsequent sections may vary.
 RUN chmod 1777 /tmp && chmod 1777 /var/tmp
 
@@ -22,10 +22,10 @@ RUN chmod 1777 /tmp && chmod 1777 /var/tmp
 # Ubuntu 20.04 (focal)
 # https://hub.docker.com/_/ubuntu/?tab=tags&name=focal
 # OS/ARCH: linux/amd64
-ARG ROOT_CONTAINER=ubuntu:focal-20210217@sha256:e3d7ff9efd8431d9ef39a144c45992df5502c995b9ba3c53ff70c5b52a848d9c
+ARG ROOT_CONTAINER=ubuntu:focal-20210401@sha256:5403064f94b617f7975a19ba4d1a1299fd584397f6ee4393d0e16744ed11aab1
 
 
-LABEL maintainer="Jupyter Project <jupyter@googlegroups.com>"
+LABEL maintainer="Jupyter Project For zretc.net <yangfei007@chinasofti.com>"
 ARG NB_USER="jovyan"
 ARG NB_UID="1000"
 ARG NB_GID="100"
@@ -40,9 +40,9 @@ USER root
 # (ARGS are in lower case to distinguish them from ENV)
 # Check https://github.com/conda-forge/miniforge/releases
 # Conda version
-ARG conda_version="4.9.2"
+ARG conda_version="4.10.0"
 # Miniforge installer patch version
-ARG miniforge_patch_number="7"
+ARG miniforge_patch_number="0"
 # Miniforge installer architecture
 ARG miniforge_arch="x86_64"
 # Package Manager and Python implementation to use (https://github.com/conda-forge/miniforge)
@@ -55,7 +55,7 @@ ARG miniforge_version="${conda_version}-${miniforge_patch_number}"
 # Miniforge installer
 ARG miniforge_installer="${miniforge_python}-${miniforge_version}-Linux-${miniforge_arch}.sh"
 # Miniforge checksum
-ARG miniforge_checksum="5a827a62d98ba2217796a9dc7673380257ed7c161017565fba8ce785fb21a599"
+ARG miniforge_checksum="c56cc2da96043688c6bdb521d825de27754de0a342d5228ba3155cd94532ff75"
 
 # Install all OS dependencies for notebook server that starts but lacks all
 # features (e.g., download as all possible file formats)
@@ -68,10 +68,20 @@ RUN apt-get -q update \
     locales \
     fonts-liberation \
     run-one \
+    openssh-server \
  && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-RUN echo "en_US.UTF-8 UTF-8" > /etc/locale.gen && \
-    locale-gen
+RUN mkdir -p /var/lib/locales/supported.d/ && \
+    cp /usr/share/i18n/SUPPORTED /var/lib/locales/supported.d/local && \
+    cd /var/lib/locales/supported.d/ && \
+    cat local  |grep "en_US.UTF-8 UTF-8" > 1.txt && \
+    cat local  |grep "zh_CN.UTF-8 UTF-8" >> 1.txt && \
+    rm -rf local && mv 1.txt  local && \
+    locale-gen  --purge && \
+    locale
+
+### Set TimeZone
+ADD Shanghai /etc/localtime
 
 # Configure environment
 ENV CONDA_DIR=/opt/conda \
@@ -79,9 +89,9 @@ ENV CONDA_DIR=/opt/conda \
     NB_USER=$NB_USER \
     NB_UID=$NB_UID \
     NB_GID=$NB_GID \
-    LC_ALL=en_US.UTF-8 \
-    LANG=en_US.UTF-8 \
-    LANGUAGE=en_US.UTF-8
+    LC_ALL=zh_CN.UTF-8 \
+    LANG=zh_CN.UTF-8 \
+    LANGUAGE=zh_CN.UTF-8
 ENV PATH=$CONDA_DIR/bin:$PATH \
     HOME=/home/$NB_USER \
     CONDA_VERSION="${conda_version}" \
@@ -95,14 +105,14 @@ RUN chmod a+rx /usr/local/bin/fix-permissions
 # hadolint ignore=SC2016
 RUN sed -i 's/^#force_color_prompt=yes/force_color_prompt=yes/' /etc/skel/.bashrc && \
    # Add call to conda init script see https://stackoverflow.com/a/58081608/4413446
-   echo 'eval "$(command conda shell.bash hook 2> /dev/null)"' >> /etc/skel/.bashrc 
+   echo 'eval "$(command conda shell.bash hook 2> /dev/null)"' >> /etc/skel/.bashrc
 
 # Create NB_USER with name jovyan user with UID=1000 and in the 'users' group
 # and make sure these dirs are writable by the `users` group.
 RUN echo "auth requisite pam_deny.so" >> /etc/pam.d/su && \
     sed -i.bak -e 's/^%admin/#%admin/' /etc/sudoers && \
     sed -i.bak -e 's/^%sudo/#%sudo/' /etc/sudoers && \
-    useradd -m -s /bin/bash -N -u $NB_UID $NB_USER && \
+    useradd -l -m -s /bin/bash -N -u $NB_UID $NB_USER && \
     mkdir -p $CONDA_DIR && \
     chown $NB_USER:$NB_GID $CONDA_DIR && \
     chmod g+w /etc/passwd && \
@@ -148,9 +158,9 @@ RUN wget --quiet "https://github.com/conda-forge/miniforge/releases/download/${m
 # Do all this in a single RUN command to avoid duplicating all of the
 # files across image layers when the permissions change
 RUN conda install --quiet --yes \
-    'notebook=6.2.0' \
+    'notebook=6.3.0' \
     'jupyterhub=1.3.0' \
-    'jupyterlab=3.0.12' && \
+    'jupyterlab=3.0.14' && \
     conda clean --all -f -y && \
     npm cache clean --force && \
     jupyter notebook --generate-config && \
@@ -160,6 +170,11 @@ RUN conda install --quiet --yes \
     fix-permissions /home/$NB_USER
 
 EXPOSE 8888
+
+COPY jupyterlab_language_pack_zh_CN-0.0.1.dev0-py2.py3-none-any.whl /tmp/
+RUN pip install jupyterlab_language_pack_zh_CN-0.0.1.dev0-py2.py3-none-any.whl && \
+    mkdir -p /home/jovyan/.jupyter/lab/user-settings/@jupyterlab/translation-extension && \
+    echo "{\"locale\": \"zh_CN\"}" > /home/jovyan/.jupyter/lab/user-settings/@jupyterlab/translation-extension/plugin.jupyterlab-settings
 
 # Configure container startup
 ENTRYPOINT ["tini", "-g", "--"]
@@ -179,6 +194,8 @@ RUN sed -re "s/c.NotebookApp/c.ServerApp/g" \
 
 RUN fix-permissions /etc/jupyter/
 
+RUN echo "$NB_USER ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/notebook
+
 # Switch back to jovyan to avoid accidental container runs as root
 USER $NB_UID
 
@@ -191,7 +208,7 @@ WORKDIR $HOME
 # Copyright (c) Jupyter Development Team.
 # Distributed under the terms of the Modified BSD License.
 
-LABEL maintainer="Jupyter Project <jupyter@googlegroups.com>"
+LABEL maintainer="Jupyter Project For zretc.net <yangfei007@chinasofti.com>"
 
 USER root
 
@@ -229,7 +246,7 @@ USER $NB_UID
 # Copyright (c) Jupyter Development Team.
 # Distributed under the terms of the Modified BSD License.
 
-LABEL maintainer="Jupyter Project <jupyter@googlegroups.com>"
+LABEL maintainer="Jupyter Project For zretc.net <yangfei007@chinasofti.com>"
 
 USER root
 
@@ -248,12 +265,12 @@ RUN conda install --quiet --yes \
     'bottleneck=1.3.*' \
     'cloudpickle=1.6.*' \
     'cython=0.29.*' \
-    'dask=2021.3.*' \
+    'dask=2021.4.*' \
     'dill=0.3.*' \
     'h5py=3.1.*' \
     'ipywidgets=7.6.*' \
-    'ipympl=0.6.*'\
-    'matplotlib-base=3.3.*' \
+    'ipympl=0.7.*'\
+    'matplotlib-base=3.4.*' \
     'numba=0.53.*' \
     'numexpr=2.7.*' \
     'pandas=1.2.*' \
@@ -296,8 +313,6 @@ WORKDIR $HOME
 ########################## Dependency: gpulibs #############################
 ############################################################################
 
-LABEL maintainer="Christoph Schranz <christoph.schranz@salzburgresearch.at>"
-
 # Install Tensorflow, check compatibility here:
 # https://www.tensorflow.org/install/source#gpu
 # installation via conda leads to errors in version 4.8.2
@@ -315,32 +330,16 @@ RUN conda install --quiet --yes \
 # Check compatibility here:
 # https://pytorch.org/get-started/locally/
 # Installation via conda leads to errors installing cudatoolkit=11.1
-RUN pip install --no-cache-dir torch torchvision torchaudio torchviz
-
-USER root
-
-# Install nvtop to monitor the gpu tasks
-RUN apt-get update && \
-    apt-get install -y cmake libncurses5-dev libncursesw5-dev git && \
-    rm -rf /var/lib/apt/lists/*
-
-RUN git clone https://github.com/Syllo/nvtop.git /run/nvtop && \
-    mkdir -p /run/nvtop/build && cd /run/nvtop/build && \
-    (cmake .. -DNVML_RETRIEVE_HEADER_ONLINE=True 2> /dev/null || echo "cmake was not successful") && \
-    (make 2> /dev/null || echo "make was not successful") && \
-    (make install 2> /dev/null || echo "make install was not successful") && \
-    cd /tmp && rm -rf /tmp/nvtop
-
-RUN fix-permissions /home/$NB_USER
-
-USER $NB_UID
+#RUN pip install --no-cache-dir torch torchvision torchaudio torchviz
+# fix cmd 20210714 https://pytorch.org/get-started/locally/
+RUN pip3 install torch==1.8.1+cu111 torchvision==0.9.1+cu111 torchaudio==0.8.1 -f https://download.pytorch.org/whl/lts/1.8/torch_lts.html && \
+    pip install --no-cache-dir torchviz && \
+    fix-permissions /home/$NB_USER
 
   ############################################################################
   ############################ Useful packages ###############################
   ############################################################################
   
-LABEL authors="Christoph Schranz <christoph.schranz@salzburgresearch.at>, Mathematical Michael <consistentbayes@gmail.com>"
-
 USER root
 
 RUN pip install --no-cache-dir ipyleaflet "plotly>=4.14.3" "ipywidgets>=7.5"
@@ -351,7 +350,7 @@ RUN set -ex \
     graphviz==0.11 \
 ' \
  && apt-get update \
- && apt-get -y install htop apt-utils iputils-ping graphviz libgraphviz-dev openssh-client \
+ ; apt-get -y install htop apt-utils iputils-ping graphviz libgraphviz-dev openssh-client rsync \
  && pip install --no-cache-dir $buildDeps
 
 # Install various extensions
@@ -376,6 +375,3 @@ RUN fix-permissions /home/$NB_USER
 
 # Switch back to jovyan to avoid accidental container runs as root
 USER $NB_UID
-
-# Copy jupyter_notebook_config.json
-COPY jupyter_notebook_config.json /etc/jupyter/
