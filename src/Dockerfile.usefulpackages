@@ -29,6 +29,9 @@ RUN pip install --no-cache-dir jupyter_contrib_nbextensions \
 #  jupyter nbextension enable codefolding/main
 RUN jupyter labextension install @ijmbarr/jupyterlab_spellchecker
 
+COPY toolbar-button /home/$NB_USER/toolbar-button
+RUN jupyter labextension install /home/$NB_USER/toolbar-button
+
 RUN fix-permissions /home/$NB_USER
 
 # Switch back to jovyan to avoid accidental container runs as root

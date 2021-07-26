@@ -1,0 +1,14 @@
+docker run -it \
+-v /home/ITP/share/resource/cases/labs/cb584f60b2964aa5a9609865c6eed9f3/dataset:/home/share/dataset:ro \
+-v /home/ITP/share/resource/cases/labs/cb584f60b2964aa5a9609865c6eed9f3/notebooks:/home/share/notebook:ro \
+-v /zker_rsa.pub:/home/jovyan/.ssh/zker_rsa.pub:ro \
+-v user-volume-1133245:/zker \
+-v /root/ssl:/certificate:ro \
+-e ZKER_VOL=/zker \
+-e DOC_PATH=/home/share/notebook \
+-e CASE_ID=cb584f60b2964aa5a9609865c6eed9f3 \
+-e ENABLE_GPU_JOB=true \
+-e JUPYTER_ENABLE_LAB=yes \
+-p 8888 -p 22 \
+--network zker-network \
+swr.cn-north-4.myhuaweicloud.com/zker/jupyter-gpu:dev-origin bash
