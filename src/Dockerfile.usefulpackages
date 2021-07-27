@@ -30,7 +30,11 @@ RUN pip install --no-cache-dir jupyter_contrib_nbextensions \
 RUN jupyter labextension install @ijmbarr/jupyterlab_spellchecker
 
 COPY toolbar-button /home/$NB_USER/toolbar-button
-RUN jupyter labextension install /home/$NB_USER/toolbar-button
+RUN cd /home/$NB_USER/toolbar-button && \
+    npm install && \
+    npm run build:prod && \
+    jupyter labextension install /home/$NB_USER/toolbar-button && \
+    cd -
 
 RUN fix-permissions /home/$NB_USER
 
