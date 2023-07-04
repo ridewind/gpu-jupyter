@@ -1,0 +1,42 @@
+# Install Tensorflow
+ARG TENSORFLOW_WHL=tensorflow-2.1.0-cp37-cp37m-linux_aarch64.whl
+ADD $TENSORFLOW_WHL /home/jovyan/$TENSORFLOW_WHL
+
+RUN conda install --yes h5py=2.10.0 && \
+    cd /home/jovyan && \
+    pip install $TENSORFLOW_WHL && \
+    pip install --no-cache-dir keras && \
+    conda clean --all -y && \
+    rm -rf /home/$NB_USER/.cache/yarn && \
+    rm -rf /home/$NB_USER/.node-gyp && \
+    rm -f $TENSORFLOW_WHL
+
+# Install PyTorch with dependencies
+# todo pytorch for arm64 with cuda
+ARG TORCH_WHL=torch-1.4.0+7f73f1d-cp37-cp37m-linux_aarch64.whl
+ARG TORCHVISION_WHL=torchvision-0.5.0a0+85b8fbf-cp37-cp37m-linux_aarch64.whl
+ADD $TORCH_WHL /home/jovyan/$TORCH_WHL
+ADD $TORCHVISION_WHL /home/jovyan/$TORCHVISION_WHL
+
+RUN conda install --yes h5py=2.10.0 && \
+    cd /home/jovyan && \
+    pip install $TORCH_WHL $TORCHVISION_WHL && \
+    conda clean --all -y && \
+    rm -rf /home/$NB_USER/.cache/yarn && \
+    rm -rf /home/$NB_USER/.node-gyp && \
+    rm -f $TORCH_WHL $TORCHVISION_WHL
+
+RUN conda install --quiet --yes \
+    pyyaml mkl mkl-include setuptools cmake cffi typing && \
+    conda clean --all -f -y && \
+    fix-permissions $CONDA_DIR && \
+    fix-permissions /home/$NB_USER
+
+# Check compatibility here:
+# https://pytorch.org/get-started/locally/
+# Installation via conda leads to errors installing cudatoolkit=11.1
+#RUN pip install --no-cache-dir torch torchvision torchaudio torchviz
+# fix cmd 20210714 https://pytorch.org/get-started/locally/
+RUN pip3 install torch==1.8.1+cu111 torchvision==0.9.1+cu111 torchaudio==0.8.1 -f https://download.pytorch.org/whl/lts/1.8/torch_lts.html && \
+    pip install --no-cache-dir torchviz && \
+    fix-permissions /home/$NB_USER
